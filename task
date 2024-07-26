@@ -1,0 +1,85 @@
+class Task:
+    def __init__(self, name, duration):
+        self.name = name
+        self.duration = duration
+        self.dependencies = []
+        self.earliest_start = 0
+        self.latest_start = float('inf')
+        self.earliest_finish = 0
+        self.latest_finish = float('inf')
+
+def add_dependency(tasks, task_name, dependency_name):
+    tasks[task_name].dependencies.append(tasks[dependency_name])
+
+def calculate_earliest_finish(tasks, start_task):
+    visited = set()
+    stack = []
+
+    def dfs(task):
+        if task.name in visited:
+            return
+        visited.add(task.name)
+        for dep in task.dependencies:
+            dfs(dep)
+        task.earliest_finish = task.earliest_start + task.duration
+        stack.append(task)
+
+    dfs(tasks[start_task])
+    
+    for task in reversed(stack):
+        for dep in task.dependencies:
+            task.earliest_start = max(task.earliest_start, dep.earliest_finish)
+
+def calculate_latest_finish(tasks, end_task):
+    max_finish_time = max(task.earliest_finish for task in tasks.values())
+    for task in tasks.values():
+        task.latest_finish = max_finish_time
+
+    visited = set()
+    stack = []
+
+    def dfs(task):
+        if task.name in visited:
+            return
+        visited.add(task.name)
+        stack.append(task)
+        for dep in task.dependencies:
+            dfs(dep)
+
+    dfs(tasks[end_task])
+
+    for task in reversed(stack):
+        for dep in task.dependencies:
+            task.latest_start = min(task.latest_start, task.latest_finish - task.duration)
+
+def main():
+    # Define tasks
+    tasks = {
+        'A': Task('A', 3),
+        'B': Task('B', 2),
+        'C': Task('C', 4),
+        'D': Task('D', 1),
+        'E': Task('E', 5)
+    }
+
+    # Add dependencies
+    add_dependency(tasks, 'B', 'A')
+    add_dependency(tasks, 'C', 'A')
+    add_dependency(tasks, 'D', 'B')
+    add_dependency(tasks, 'E', 'C')
+
+    # Calculate earliest finish time starting from task A
+    calculate_earliest_finish(tasks, 'A')
+
+    # Calculate latest finish time starting from the last task E
+    calculate_latest_finish(tasks, 'E')
+
+    # Output results
+    earliest_completion = max(task.earliest_finish for task in tasks.values())
+    latest_completion = max(task.latest_finish for task in tasks.values())
+    
+    print(f"Earliest completion time: {earliest_completion}")
+    print(f"Latest completion time: {latest_completion}")
+
+if __name__ == "__main__":
+    main()
